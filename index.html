@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KDSHOES – Inventario & Ventas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- jsPDF + autoTable para exportación PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS para exportación Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     PANTALLA DE LOGIN
+═══════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg">
+    <div class="login-noise"></div>
+    <div class="login-lines"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="logo-kd">KD</span><span class="logo-shoes">SHOES</span>
+    </div>
+    <p class="login-tagline">Control de Inventario & Ventas</p>
+    <div class="form-group">
+      <label>USUARIO</label>
+      <input type="text" id="login-user" placeholder="Ingresa tu usuario" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label>CLAVE</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <div id="login-error" class="error-msg hidden">Usuario o clave incorrectos</div>
+    <button class="btn-gold" id="btn-login">INGRESAR</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MENÚ PRINCIPAL
+═══════════════════════════════════════ -->
+<div id="screen-menu" class="screen">
+  <header class="app-header">
+    <div class="header-logo"><span class="logo-kd">KD</span><span class="logo-shoes">SHOES</span></div>
+    <button class="btn-logout" id="btn-logout" title="Cerrar sesión">⏻</button>
+  </header>
+  <main class="menu-grid">
+    <button class="menu-card" data-target="screen-inventario">
+      <span class="menu-icon">📦</span>
+      <span class="menu-label">Agregar<br/>Inventario</span>
+    </button>
+    <button class="menu-card" data-target="screen-venta">
+      <span class="menu-icon">🛍️</span>
+      <span class="menu-label">Venta</span>
+    </button>
+    <button class="menu-card" data-target="screen-consulta">
+      <span class="menu-icon">🔍</span>
+      <span class="menu-label">Consultar<br/>Inventario</span>
+    </button>
+    <button class="menu-card" data-target="screen-reporte">
+      <span class="menu-icon">📊</span>
+      <span class="menu-label">Reporte<br/>de Ventas</span>
+    </button>
+    <button class="menu-card" data-target="screen-caja">
+      <span class="menu-icon">💰</span>
+      <span class="menu-label">Caja</span>
+    </button>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MÓDULO: AGREGAR INVENTARIO
+═══════════════════════════════════════ -->
+<div id="screen-inventario" class="screen">
+  <header class="app-header">
+    <button class="btn-back" data-target="screen-menu">← Menú</button>
+    <div class="header-title">Agregar Inventario</div>
+    <div></div>
+  </header>
+  <div class="module-body">
+    <div class="card-form">
+      <div class="form-group">
+        <label>FECHA</label>
+        <input type="date" id="inv-fecha" />
+      </div>
+      <div class="form-group">
+        <label>CÓDIGO</label>
+        <select id="inv-codigo">
+          <option value="">— Selecciona —</option>
+        </select>
+      </div>
+      <!-- Crear nuevo código -->
+      <div id="nuevo-codigo-section" class="hidden">
+        <div class="divider-label">NUEVO CÓDIGO</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>CÓDIGO</label>
+            <input type="text" id="nuevo-codigo-val" placeholder="ej. 004" maxlength="10" />
+          </div>
+          <div class="form-group">
+            <label>NOMBRE PRODUCTO</label>
+            <input type="text" id="nuevo-nombre-val" placeholder="ej. Jordan 1" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>TIPO DE PRODUCTO</label>
+          <select id="nuevo-tipo">
+            <option value="calzado">Calzado (tallas 35-42)</option>
+            <option value="ropa">Ropa (S, M, L, XL, 2XL)</option>
+          </select>
+        </div>
+        <button class="btn-secondary" id="btn-crear-codigo">Crear Código</button>
+        <div id="nuevo-codigo-msg" class="msg-inline hidden"></div>
+      </div>
+
+      <div class="form-group">
+        <label>PRODUCTO</label>
+        <input type="text" id="inv-producto" readonly placeholder="Se llena automáticamente" />
+      </div>
+      <div class="form-group">
+        <label>GÉNERO</label>
+        <select id="inv-genero">
+          <option value="">— Selecciona —</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Femenino">Femenino</option>
+          <option value="Unisex">Unisex</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>TALLA</label>
+        <select id="inv-talla">
+          <option value="">— Selecciona primero el código —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CANTIDAD</label>
+          <input type="number" id="inv-cantidad" min="1" step="1" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>COSTO UNITARIO ($)</label>
+          <input type="number" id="inv-costo" min="0" step="100" placeholder="0" />
+        </div>
+      </div>
+      <div id="inv-msg" class="msg-inline hidden"></div>
+      <button class="btn-gold" id="btn-guardar-inv">GUARDAR INVENTARIO</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MÓDULO: VENTA
+═══════════════════════════════════════ -->
+<div id="screen-venta" class="screen">
+  <header class="app-header">
+    <button class="btn-back" data-target="screen-menu">← Menú</button>
+    <div class="header-title">Registrar Venta</div>
+    <div></div>
+  </header>
+  <div class="module-body">
+    <div class="card-form">
+      <div class="form-group">
+        <label>CÉDULA CLIENTE</label>
+        <div class="input-row">
+          <input type="text" id="vta-cedula" placeholder="Número de cédula" />
+          <button class="btn-search" id="btn-buscar-cliente" title="Buscar cliente">🔍</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>NOMBRE CLIENTE</label>
+        <input type="text" id="vta-nombre" placeholder="Nombre completo" />
+      </div>
+      <div class="form-group">
+        <label>PRODUCTO</label>
+        <select id="vta-producto">
+          <option value="">— Selecciona —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>TALLA</label>
+        <select id="vta-talla">
+          <option value="">— Selecciona primero el producto —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CANTIDAD</label>
+          <input type="number" id="vta-cantidad" min="1" step="1" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>PRECIO VENTA UNITARIO ($)</label>
+          <input type="number" id="vta-precio" min="0" step="100" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>COMENTARIO</label>
+        <textarea id="vta-comentario" rows="2" placeholder="Opcional..."></textarea>
+      </div>
+      <div id="vta-disponible" class="stock-badge hidden"></div>
+      <div id="vta-msg" class="msg-inline hidden"></div>
+      <button class="btn-gold" id="btn-registrar-venta">REGISTRAR VENTA</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MÓDULO: CONSULTAR INVENTARIO
+═══════════════════════════════════════ -->
+<div id="screen-consulta" class="screen">
+  <header class="app-header">
+    <button class="btn-back" data-target="screen-menu">← Menú</button>
+    <div class="header-title">Consultar Inventario</div>
+    <div></div>
+  </header>
+  <div class="module-body">
+    <div class="filter-bar">
+      <div class="form-group">
+        <label>FILTRAR POR CÓDIGO</label>
+        <select id="cons-codigo">
+          <option value="">Todos los productos</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>BUSCAR</label>
+        <input type="text" id="cons-buscar" placeholder="Buscar producto, talla..." />
+      </div>
+    </div>
+    <div id="cons-stats" class="stats-row"></div>
+    <div class="table-wrapper">
+      <table id="tabla-inventario" class="data-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th>Género</th>
+            <th>Talla</th>
+            <th>Disponible</th>
+            <th>Costo Unit.</th>
+            <th>Valor Total</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-inventario"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MÓDULO: REPORTE DE VENTAS
+═══════════════════════════════════════ -->
+<div id="screen-reporte" class="screen">
+  <header class="app-header">
+    <button class="btn-back" data-target="screen-menu">← Menú</button>
+    <div class="header-title">Reporte de Ventas</div>
+    <div></div>
+  </header>
+  <div class="module-body">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-total">Total General</button>
+      <button class="tab-btn" data-tab="tab-cliente">Buscar Cliente</button>
+      <button class="tab-btn" data-tab="tab-todos">Todos</button>
+    </div>
+
+    <!-- Tab: Total General -->
+    <div id="tab-total" class="tab-panel active">
+      <div class="stats-grid" id="rep-total-stats"></div>
+      <div class="section-title">Ventas por Referencia</div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>Código</th><th>Producto</th><th>Unidades</th><th>Total Vendido</th></tr></thead>
+          <tbody id="tbody-por-ref"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Buscar Cliente -->
+    <div id="tab-cliente" class="tab-panel hidden">
+      <div class="filter-bar">
+        <div class="form-group">
+          <label>CÉDULA</label>
+          <div class="input-row">
+            <input type="text" id="rep-cedula" placeholder="Número de cédula" />
+            <button class="btn-search" id="btn-buscar-rep">🔍</button>
+          </div>
+        </div>
+      </div>
+      <div id="rep-cliente-info" class="hidden">
+        <div class="client-card" id="rep-cliente-header"></div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Talla</th><th>Cant.</th><th>P.Venta</th><th>Total</th><th>Comentario</th></tr></thead>
+            <tbody id="tbody-cliente"></tbody>
+          </table>
+        </div>
+        <div class="total-row" id="rep-cliente-total"></div>
+      </div>
+      <div id="rep-cliente-empty" class="empty-state hidden">No se encontraron ventas para esta cédula.</div>
+    </div>
+
+    <!-- Tab: Todos los Clientes -->
+    <div id="tab-todos" class="tab-panel hidden">
+      <div class="filter-bar">
+        <div class="form-group">
+          <label>BUSCAR</label>
+          <input type="text" id="todos-buscar" placeholder="Buscar por nombre, cédula, producto..." />
+        </div>
+        <div class="export-btns">
+          <button class="btn-export" id="btn-export-pdf">⬇ PDF</button>
+          <button class="btn-export" id="btn-export-excel">⬇ Excel</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="tabla-todos">
+          <thead><tr><th>Fecha</th><th>Cédula</th><th>Cliente</th><th>Producto</th><th>Talla</th><th>Cant.</th><th>P.Venta</th><th>Total</th><th>Comentario</th></tr></thead>
+          <tbody id="tbody-todos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MÓDULO: CAJA
+═══════════════════════════════════════ -->
+<div id="screen-caja" class="screen">
+  <header class="app-header">
+    <button class="btn-back" data-target="screen-menu">← Menú</button>
+    <div class="header-title">Caja</div>
+    <div></div>
+  </header>
+  <div class="module-body">
+    <div id="caja-fecha-label" class="caja-fecha"></div>
+    <div class="caja-stats" id="caja-stats"></div>
+    <div class="section-title">Movimientos del Día</div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr><th>Hora</th><th>Cliente</th><th>Producto</th><th>Talla</th><th>Cant.</th><th>Total</th></tr></thead>
+        <tbody id="tbody-caja"></tbody>
+      </table>
+    </div>
+    <div class="section-title">Balance Acumulado</div>
+    <div id="caja-balance" class="balance-card"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
